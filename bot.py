@@ -2,9 +2,6 @@ import logging
 import os
 import asyncio
 from aiogram import Bot, Dispatcher
-<<<<<<< HEAD
-from handlers import start, cources, role, teacher, student
-=======
 
 from handlers import start, cources, role, teacher, student, test_creator
 >>>>>>> 4a93b39 (Обновил файлы: исправил получение email через People API)
