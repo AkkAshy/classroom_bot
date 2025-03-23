@@ -123,12 +123,16 @@ CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
 
 SCOPES = [
     "https://www.googleapis.com/auth/classroom.courses",
+    "https://www.googleapis.com/auth/userinfo.profile",
+    "https://www.googleapis.com/auth/userinfo.email",
     "https://www.googleapis.com/auth/classroom.coursework.students",
     "https://www.googleapis.com/auth/classroom.coursework.me",
     "https://www.googleapis.com/auth/classroom.announcements",
     "https://www.googleapis.com/auth/classroom.rosters",
     "https://www.googleapis.com/auth/classroom.courses.readonly",
-    "https://www.googleapis.com/auth/classroom.courseworkmaterials.readonly",   
+    "https://www.googleapis.com/auth/classroom.courseworkmaterials.readonly",
+    "https://www.googleapis.com/auth/forms.body",
+    "openid"
 ]
 
 TOKEN_DIR = "tokens"
@@ -289,4 +293,10 @@ async def handle_oauth_callback(request):
         return web.json_response({"error": f"Ошибка при получении токена: {str(e)}"}, status=500)
 
 def get_url(user_id):
+<<<<<<< HEAD
     return f"https://classroom-bot-7wn6.onrender.com/auth?user_id={user_id}"
+=======
+    return f"http://localhost:8080/auth?user_id={user_id}"
+
+
+>>>>>>> 4a93b39 (Обновил файлы: исправил получение email через People API)

@@ -2,7 +2,12 @@ import logging
 import os
 import asyncio
 from aiogram import Bot, Dispatcher
+<<<<<<< HEAD
 from handlers import start, cources, role, teacher, student
+=======
+
+from handlers import start, cources, role, teacher, student, test_creator
+>>>>>>> 4a93b39 (Обновил файлы: исправил получение email через People API)
 from server import start_server  # Импортируем сервер
 import tracemalloc
 from dotenv import load_dotenv
@@ -40,10 +45,12 @@ dp.include_router(student.router)
 dp.include_router(cources.router)
 dp.include_router(role.router)
 dp.include_router(teacher.router)
+dp.include_router(test_creator.router)
 
 async def main():
     """Запуск и бота, и сервера"""
     logging.info("🚀 Бот запускается...")
+    await asyncio.sleep(2) # Небольшая задержка для старта
     await bot.delete_webhook(drop_pending_updates=True)
 
     # Запускаем aiohttp-сервер параллельно с ботом

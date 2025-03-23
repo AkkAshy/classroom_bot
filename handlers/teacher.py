@@ -22,6 +22,7 @@ class MaterialState(StatesGroup):
 def teacher_menu():
     buttons = [
         [KeyboardButton(text="Добавить материал")],
+        [KeyboardButton(text="Создать тест")],
         [KeyboardButton(text="📚 Мои курсы")],
         [KeyboardButton(text="➕ Создать курс")],
         [KeyboardButton(text="🔙 Выйти")]

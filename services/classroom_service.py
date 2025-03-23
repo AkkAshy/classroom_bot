@@ -1,12 +1,26 @@
 from googleapiclient.discovery import build
 from services.google_auth import get_credentials  # Функция авторизации
 from googleapiclient.errors import HttpError
-from .google_auth import get_credentials  # Подключаем авторизацию
+import pickle
+import os
 import asyncio
 import logging
 
+TOKEN_DIR = "tokens"
 
 logger = logging.getLogger(__name__)  # Создаем логгер
+
+
+def get_stored_credentials(user_id):
+    token_file = f"{TOKEN_DIR}/{user_id}.pickle"
+
+    if not os.path.exists(token_file):
+        return None  # Токены не найдены
+
+    with open(token_file, "rb") as token:
+        creds = pickle.load(token)
+
+    return creds
 
 async def get_classroom_service(user_id):
     """Асинхронно создаёт и возвращает сервис Google Classroom с обработкой ошибок."""
@@ -30,15 +44,28 @@ async def get_classroom_service(user_id):
     return None
 
 async def list_courses(user_id):
-    """Асинхронно получает список курсов пользователя"""
-    service = await get_classroom_service(user_id=user_id)
-    if not service:
+    """Получает список курсов, в которых записан ученик"""
+    creds = get_stored_credentials(user_id)
+    if not creds:
+        print(f"❌ У пользователя {user_id} нет сохранённых токенов.")
+        return []  
+
+    service = build("classroom", "v1", credentials=creds)
+
+    try:
+        response = service.courses().list().execute()
+        courses = response.get("courses", [])
+
+        # Отладочный вывод (посмотри в консоли)
+        print(f"📚 Найденные курсы для {user_id}: {courses}")
+
+        return [{"id": c["id"], "name": c["name"]} for c in courses]
+    
+    except HttpError as e:
+        print(f"❌ Ошибка при получении курсов для {user_id}: {e}")
         return []
 
-    loop = asyncio.get_running_loop()
-    response = await loop.run_in_executor(None, lambda: service.courses().list().execute())
-    
-    return response.get("courses", [])
+
 
 
 async def add_material_to_course(user_id, course_id: str, title: str, description: str, attachment: str = None):
@@ -91,52 +118,110 @@ async def create_course(name, user_id):
 
 
 async def get_course_materials(course_id, user_id):
-    """Получает список материалов курса (объявлений)"""
-    service = await get_classroom_service(user_id=user_id)
+    """Получает список материалов курса"""
+    creds = get_stored_credentials(user_id)
+    if not creds:
+        return []  # Если токенов нет, возвращаем пустой список
+
+    service = build("classroom", "v1", credentials=creds)
 
     try:
-        # Получаем материалы курса
-        response = service.courses().courseWorkMaterials().list(courseId=course_id).execute()
-        print(response)
-        
-        # Проверка, что materials существуют в ответе
-        materials = response.get("courseWorkMaterials", [])
+        response = service.courses().courseWork().list(courseId=course_id).execute()
+        materials = response.get("courseWork", [])
+
         if not materials:
-            print(f"Нет материалов для курса с ID {course_id}")
+            print(f"❌ В курсе {course_id} нет доступных материалов.")
             return []
 
-        result = []  # Массив для хранения материалов
+        result = []
 
         for material in materials:
-            material_info = {}
+            item = {
+                "title": material["title"],
+                "description": material.get("description", "Нет описания"),
+                "attachments": []
+            }
 
-            # Проверка на наличие title (название материала)
-            if 'title' in material:
-                material_info["title"] = material['title']
-            
-            # Проверка на наличие description (описание материала)
-            if 'description' in material:
-                material_info["description"] = material['description']
-
-            # Проверка на наличие вложений (materials, attachments или других полей)
-            if 'materials' in material:  # API Google использует 'materials', а не 'attachments'
-                files = []
-                for attachment in material['materials']:
-                    if 'driveFile' in attachment:  # Проверяем наличие вложений в формате 'driveFile'
-                        file_info = attachment['driveFile']
-                        files.append({
-                            "title": file_info.get("title", "Без названия"),  # Название файла
-                            "file_id": file_info.get("id")  # ID файла
+            # Проверяем вложения
+            if "materials" in material:
+                for attachment in material["materials"]:
+                    if "driveFile" in attachment:
+                        file_info = attachment["driveFile"]
+                        item["attachments"].append({
+                            "title": file_info["title"],
+                            "file_id": file_info["id"]
                         })
-                if files:
-                    material_info["attachments"] = files  # Добавляем файлы к материалу
+                    elif "link" in attachment:
+                        item["attachments"].append({
+                            "title": "Ссылка",
+                            "url": attachment["link"]["url"]
+                        })
+                    elif "youtubeVideo" in attachment:
+                        item["attachments"].append({
+                            "title": "YouTube Видео",
+                            "url": f"https://www.youtube.com/watch?v={attachment['youtubeVideo']['id']}"
+                        })
 
-            result.append(material_info)  # Добавляем материал в список
+            result.append(item)
 
-        return result  # Возвращаем список с материалами
+        return result
+    except HttpError as e:
+        print(f"Ошибка при получении материалов: {e}")
+        return []
 
+
+
+from googleapiclient.discovery import build
+
+def get_email(creds):
+    """Пытается получить email пользователя через Google People API"""
+    try:
+        people_service = build("people", "v1", credentials=creds)
+        profile = people_service.people().get(resourceName="people/me", personFields="emailAddresses").execute()
+
+        user_email = profile.get("emailAddresses", [{}])[0].get("value", None)
+        if user_email:
+            return user_email
+        else:
+            return "❌ Email не найден, проверь права доступа."
     except Exception as e:
-        print(f"Ошибка при получении материалов курса: {e}")  # Логируем ошибку
-        return []  # Возвращаем пустой список при ошибке
+        return f"❌ Ошибка при получении email: {e}"
 
 
+async def enroll_user_to_course(user_id, course_id):
+    """Добавляет пользователя в курс по его user_id и course_id"""
+    creds = get_stored_credentials(user_id) 
+     
+    if not creds:
+        return {"success": False, "error": "❌ У вас нет сохранённого токена."}
+
+    service = build("classroom", "v1", credentials=creds)
+
+    try:
+        response = service.userProfiles().get(userId="me").execute()
+        print("Google API Response:", response)  # Выведет полный ответ API
+
+        user_email = get_email(creds)
+        # response.get("emailAddress", None) 
+        # if not user_email:
+        #     return {"success": False, "error": "❌ Google API не вернул emailAddress. Проверь токен и разрешения."}
+
+        user_email = service.userProfiles().get(userId="me").execute()["emailAddress"]
+
+        enrollment = {
+            "userId": user_email  # Google Classroom требует email, а не user_id
+        }
+
+        service.courses().students().create(courseId=course_id, body=enrollment).execute()
+        return {"success": True, "message": "✅ Вы успешно записаны в курс!"}
+    
+    except HttpError as e:
+        error_message = str(e)
+        if "409" in error_message:
+            return {"success": False, "error": "⚠️ Вы уже записаны в этот курс."}
+        elif "403" in error_message:
+            return {"success": False, "error": "❌ У вас нет прав для записи в курс."}
+        elif "404" in error_message:
+            return {"success": False, "error": "❌ Курс не найден. Проверьте код курса."}
+        else:
+            return {"success": False, "error": f"❌ Ошибка: {error_message}"}
