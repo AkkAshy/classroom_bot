@@ -4,7 +4,7 @@ import asyncio
 from aiogram import Bot, Dispatcher
 
 from handlers import start, cources, role, teacher, student, test_creator
->>>>>>> 4a93b39 (Обновил файлы: исправил получение email через People API)
+
 from server import start_server  # Импортируем сервер
 import tracemalloc
 from dotenv import load_dotenv
