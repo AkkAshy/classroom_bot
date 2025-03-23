@@ -187,12 +187,12 @@ async def get_credentials(user_id):
                         "client_secret": CLIENT_SECRET,
                         "auth_uri": "https://accounts.google.com/o/oauth2/auth",
                         "token_uri": "https://oauth2.googleapis.com/token",
-                        "redirect_uris": ["https://classroom-bot-7wn6.onrender.com/oauth_callback"]
+                        "redirect_uris": ["https://classroom-bot-svpk.onrender.com/oauth_callback"]
                     }
                 },
                 SCOPES,
             )
-            flow.redirect_uri = "https://classroom-bot-7wn6.onrender.com/oauth_callback"
+            flow.redirect_uri = "https://classroom-bot-svpk.onrender.com/oauth_callback"
             logging.info(f"Flow config: {flow}")
             logging.info(f"Redirect URI: {flow.redirect_uri}")
 
@@ -271,12 +271,12 @@ async def handle_oauth_callback(request):
                         "client_secret": CLIENT_SECRET,
                         "auth_uri": "https://accounts.google.com/o/oauth2/auth",
                         "token_uri": "https://oauth2.googleapis.com/token",
-                        "redirect_uris": ["https://classroom-bot-7wn6.onrender.com/oauth_callback"]
+                        "redirect_uris": ["https://classroom-bot-svpk.onrender.com/oauth_callback"]
                     }
                 },
                 SCOPES,
             )
-    flow.redirect_uri = "https://classroom-bot-7wn6.onrender.com/oauth_callback"
+    flow.redirect_uri = "https://classroom-bot-svpk.onrender.com/oauth_callback"
 
     try:
         flow.fetch_token(code=code)
@@ -294,5 +294,5 @@ async def handle_oauth_callback(request):
 
 def get_url(user_id):
 
-    return f"https://classroom-bot-7wn6.onrender.com/auth?user_id={user_id}"
+    return f"https://classroom-bot-svpk.onrender.com/auth?user_id={user_id}"
 
