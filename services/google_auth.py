@@ -293,10 +293,6 @@ async def handle_oauth_callback(request):
         return web.json_response({"error": f"Ошибка при получении токена: {str(e)}"}, status=500)
 
 def get_url(user_id):
-<<<<<<< HEAD
+
     return f"https://classroom-bot-7wn6.onrender.com/auth?user_id={user_id}"
-=======
-    return f"http://localhost:8080/auth?user_id={user_id}"
 
-
->>>>>>> 4a93b39 (Обновил файлы: исправил получение email через People API)
