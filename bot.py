@@ -2,10 +2,15 @@ import logging
 import os
 import asyncio
 from aiogram import Bot, Dispatcher
-from config import BOT_TOKEN
 from handlers import start, cources, role, teacher, student
 from server import start_server  # Импортируем сервер
 import tracemalloc
+from dotenv import load_dotenv
+
+
+load_dotenv()
+
+BOT_TOKEN = os.getenv("BOT_TOKEN")
 
 if not os.path.exists("logs"):
     os.makedirs("logs")
